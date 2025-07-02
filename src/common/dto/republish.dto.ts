@@ -1,4 +1,11 @@
-import { IsOptional, IsString, IsNumber, IsBoolean } from 'class-validator';
+import {
+  IsOptional,
+  IsString,
+  IsNumber,
+  IsBoolean,
+  IsArray,
+  ArrayMinSize,
+} from 'class-validator';
 
 export class RepublishAllResponseDto {
   message: string;
@@ -38,4 +45,26 @@ export class RepublishRequestDto {
   @IsOptional()
   @IsBoolean()
   forceRun?: boolean;
+}
+
+export class RepublishByIdsRequestDto {
+  @IsArray()
+  @ArrayMinSize(1, { message: 'At least one ad ID must be provided' })
+  @IsString({ each: true, message: 'Each ad ID must be a string' })
+  adIds: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  forceRun?: boolean;
+}
+
+export class RepublishByIdsResponseDto {
+  message: string;
+  timestamp: string;
+  processId: string;
+  stats: {
+    totalAdsProvided: number;
+    requestsSent: number;
+    failed?: number;
+  };
 }

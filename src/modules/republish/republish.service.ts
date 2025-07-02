@@ -112,6 +112,74 @@ export class RepublishService {
     }
   }
 
+  async republishSpecificAds(
+    adIds: string[],
+    forceRun = false,
+  ): Promise<{ processId: string; stats: any }> {
+    if (this.isRunning && !forceRun) {
+      throw new Error('Republishing process is already running');
+    }
+
+    const processId = uuidv4();
+    this.currentProcessId = processId;
+    this.isRunning = true;
+    this.errors = 0;
+    this.adsRepublished = 0;
+
+    try {
+      this.logger.log(
+        `Starting specific ads republish process [${processId}] for ${adIds.length} ads`,
+      );
+
+      if (adIds.length === 0) {
+        this.logger.warn('No ad IDs provided for republishing');
+        return {
+          processId,
+          stats: {
+            totalAdsProvided: 0,
+            requestsSent: 0,
+            failed: 0,
+          },
+        };
+      }
+
+      this.logger.log(`Republishing ${adIds.length} specific ads`);
+
+      // Republish specific ads in parallel
+      const results = await this.republishAdsInParallel(adIds);
+
+      // Process results - all requests are considered successful
+      const successful = results.length;
+      const failed = 0;
+
+      this.adsRepublished = successful;
+      this.errors = failed;
+      this.lastRun = new Date();
+
+      this.logger.log(
+        `Specific ads republish process completed [${processId}]: ${successful} requests sent`,
+      );
+
+      return {
+        processId,
+        stats: {
+          totalAdsProvided: adIds.length,
+          requestsSent: successful,
+          failed,
+        },
+      };
+    } catch (error) {
+      this.logger.error(
+        `Specific ads republish process failed [${processId}]:`,
+        error.message,
+      );
+      throw error;
+    } finally {
+      this.isRunning = false;
+      this.currentProcessId = undefined;
+    }
+  }
+
   private async republishAdsInParallel(
     adIds: string[],
   ): Promise<RepublishResult[]> {

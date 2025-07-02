@@ -12,6 +12,8 @@ import {
   RepublishAllResponseDto,
   RepublishStatusResponseDto,
   RepublishRequestDto,
+  RepublishByIdsRequestDto,
+  RepublishByIdsResponseDto,
 } from '../../common/dto/republish.dto';
 
 @Controller('republish')
@@ -47,6 +49,46 @@ export class RepublishController {
 
       throw new HttpException(
         'Failed to start republishing process',
+        HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+  }
+
+  @Post('specific')
+  async republishSpecific(
+    @Body() body: RepublishByIdsRequestDto,
+  ): Promise<RepublishByIdsResponseDto> {
+    try {
+      this.logger.log(
+        `Manual republish specific ads triggered for ${body.adIds.length} ads`,
+      );
+
+      const result = await this.republishService.republishSpecificAds(
+        body.adIds,
+        body.forceRun,
+      );
+
+      return {
+        message: `Republishing process completed for ${body.adIds.length} specific ads`,
+        timestamp: new Date().toISOString(),
+        processId: result.processId,
+        stats: result.stats,
+      };
+    } catch (error) {
+      this.logger.error(
+        'Failed to start specific ads republish process:',
+        error.message,
+      );
+
+      if (error.message.includes('already running')) {
+        throw new HttpException(
+          'Republishing process is already running',
+          HttpStatus.CONFLICT,
+        );
+      }
+
+      throw new HttpException(
+        'Failed to start specific ads republishing process',
         HttpStatus.INTERNAL_SERVER_ERROR,
       );
     }
