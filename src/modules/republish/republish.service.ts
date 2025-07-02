@@ -25,7 +25,7 @@ export class RepublishService {
     private readonly scraperService: ScraperService,
   ) {}
 
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT) // This will be overridden by configuration
+  @Cron(CronExpression.EVERY_30_MINUTES) // This will be overridden by configuration
   async handleCronRepublish() {
     const cronSchedule = this.configService.get('cron.schedule');
     this.logger.log(`Cron job triggered with schedule: ${cronSchedule}`);
